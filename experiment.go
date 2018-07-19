@@ -43,11 +43,18 @@ func main() {
 	beachline.insert(5)
 	beachline.insert(12)
 	beachline.insert(7)
+	beachline.insert(6)
+	beachline.insert(2)
 	beachline.inorderTraversal()
 
+	fmt.Println()
 	fmt.Println(beachline.search(10))
 	fmt.Println(beachline.search(11))
 	fmt.Println(beachline.search(7))
+
+	beachline.delete(12)
+	beachline.delete(5)
+	beachline.inorderTraversal()
 
 	//fortunesAlgorithm(&pq)
 }
