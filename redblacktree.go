@@ -11,10 +11,13 @@ const (
 	black bool = false
 )
 
+// Internal Nodes - These will have a breakpoint but arcSite will be nil
+// Leaf Nodes - These have an arcSite but no breakpoint
 type node struct {
 	left, right *node
 	colour      bool
-	sites       []site
+	breakpoint  *breakpoint
+	arcSite     *site
 	key         int
 	circleEvent *Item
 	edge        *halfEdge
@@ -24,43 +27,45 @@ type redblacktree struct {
 	root *node
 }
 
-func (rbtree *redblacktree) insert(newKey int) {
+func (rbtree *redblacktree) insert(newKey int, newSite *site) {
 	if rbtree.root == nil {
-		rbtree.root = &node{colour: black, key: newKey}
+		rbtree.root = &node{colour: black, arcSite: newSite}
 	} else {
-		rbtree.root.insert(rbtree.root, newKey)
+		rbtree.root = rbtree.root.insert(rbtree.root, newKey, newSite)
 	}
 }
 
-func (n *node) insert(currentNode *node, newKey int) *node {
-	if currentNode == nil {
-		return &node{colour: red, key: newKey}
+func (n *node) insert(currentNode *node, newKey int, newSite *site) *node {
+	// Check if this is a leaf node
+	if currentNode.breakpoint == nil {
+		// TODO - check if currentNode has a circle event and if it does this needs to be removed
+		// from the event queue as it is a false alarm
+
+		// Define the breakpoints that will be used in the two new internal nodes
+		leftBreakpoint := breakpoint{leftSite: currentNode.arcSite, rightSite: newSite}
+		rightBreakpoint := breakpoint{leftSite: newSite, rightSite: currentNode.arcSite}
+
+		// The 3 leaf nodes that represent the arcs
+		leftLeafNode := node{arcSite: currentNode.arcSite}
+		middleLeafNode := node{arcSite: newSite}
+		rightLeafNode := node{arcSite: currentNode.arcSite}
+
+		leftInternalNode := node{key: newKey, left: &leftLeafNode, right: &middleLeafNode, breakpoint: &leftBreakpoint}
+		rightInternalNode := node{key: newKey, left: &leftInternalNode, right: &rightLeafNode, breakpoint: &rightBreakpoint}
+
+		return &rightInternalNode
 	}
 
-	if newKey < currentNode.key {
-		currentNode.left = currentNode.insert(currentNode.left, newKey)
-	} else if newKey > currentNode.key {
-		currentNode.right = currentNode.insert(currentNode.right, newKey)
+	// The directrix will be at the same y coordinate as the new site being added
+	breakpointXCoordinate := getBreakpointXCoordinate(currentNode.breakpoint, newSite.y)
+
+	if float64(newSite.x) < breakpointXCoordinate {
+		currentNode.left = currentNode.insert(currentNode.left, newKey, newSite)
+	} else if float64(newSite.x) > breakpointXCoordinate {
+		currentNode.right = currentNode.insert(currentNode.right, newKey, newSite)
 	}
 
 	return currentNode
-}
-
-func (rbtree *redblacktree) search(keyToFind int) *node {
-	if rbtree.root == nil || rbtree.root.key == keyToFind {
-		return rbtree.root
-	}
-	return rbtree.root.search(rbtree.root, keyToFind)
-}
-
-func (n *node) search(currentNode *node, keyToFind int) *node {
-	if currentNode == nil || currentNode.key == keyToFind {
-		return currentNode
-	}
-	if keyToFind > currentNode.key {
-		return currentNode.search(currentNode.right, keyToFind)
-	}
-	return currentNode.search(currentNode.left, keyToFind)
 }
 
 func (rbtree *redblacktree) delete(keyToRemove int) *node {

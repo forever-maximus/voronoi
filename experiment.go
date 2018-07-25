@@ -9,6 +9,11 @@ type site struct {
 	x, y int
 }
 
+type breakpoint struct {
+	leftSite  *site
+	rightSite *site
+}
+
 // Event - represents an event used in Fortune's algorithm for generating voronoi diagram
 type Event struct {
 	eventType string
@@ -39,21 +44,18 @@ func main() {
 
 	// Testing BST implementation
 	beachline := redblacktree{root: nil}
-	beachline.insert(10)
-	beachline.insert(5)
-	beachline.insert(12)
-	beachline.insert(7)
-	beachline.insert(6)
-	beachline.insert(2)
+	testSite := site{x: 40, y: 120}
+	beachline.insert(10, &testSite)
 	beachline.inorderTraversal()
-
 	fmt.Println()
-	fmt.Println(beachline.search(10))
-	fmt.Println(beachline.search(11))
-	fmt.Println(beachline.search(7))
 
-	beachline.delete(12)
-	beachline.delete(5)
+	secondTestSite := site{x: 70, y: 100}
+	beachline.insert(12, &secondTestSite)
+	beachline.inorderTraversal()
+	fmt.Println()
+
+	thirdTestSite := site{x: 120, y: 70}
+	beachline.insert(15, &thirdTestSite)
 	beachline.inorderTraversal()
 
 	//fortunesAlgorithm(&pq)
