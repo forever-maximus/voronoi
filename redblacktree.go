@@ -14,13 +14,13 @@ const (
 // Internal Nodes - These will have a breakpoint but arcSite will be nil
 // Leaf Nodes - These have an arcSite but no breakpoint
 type node struct {
-	left, right *node
-	colour      bool
-	breakpoint  *breakpoint
-	arcSite     *site
-	key         int
-	circleEvent *Item
-	edge        *halfEdge
+	left, right, parent *node
+	colour              bool
+	breakpoint          *breakpoint
+	arcSite             *site
+	key                 int
+	circleEvent         *Item
+	edge                *halfEdge
 }
 
 type redblacktree struct {
@@ -38,8 +38,10 @@ func (rbtree *redblacktree) insert(newKey int, newSite *site) {
 func (n *node) insert(currentNode *node, newKey int, newSite *site) *node {
 	// Check if this is a leaf node
 	if currentNode.breakpoint == nil {
-		// TODO - check if currentNode has a circle event and if it does this needs to be removed
-		// from the event queue as it is a false alarm
+
+		if currentNode.circleEvent != nil {
+			// TODO - remove circle event from event queue as it is a false alarm
+		}
 
 		// Define the breakpoints that will be used in the two new internal nodes
 		leftBreakpoint := breakpoint{leftSite: currentNode.arcSite, rightSite: newSite}
@@ -53,6 +55,15 @@ func (n *node) insert(currentNode *node, newKey int, newSite *site) *node {
 		leftInternalNode := node{key: newKey, left: &leftLeafNode, right: &middleLeafNode, breakpoint: &leftBreakpoint}
 		rightInternalNode := node{key: newKey, left: &leftInternalNode, right: &rightLeafNode, breakpoint: &rightBreakpoint}
 
+		// Set parent nodes
+		leftInternalNode.parent = &rightInternalNode
+		rightLeafNode.parent = &rightInternalNode
+		middleLeafNode.parent = &leftInternalNode
+		leftLeafNode.parent = &leftInternalNode
+
+		// TODO - check for potential circle event (i.e. check for unique triples of sites on beachline (a,b,c))
+		// This means that the new site will be on either end of the triple
+
 		return &rightInternalNode
 	}
 
@@ -61,8 +72,10 @@ func (n *node) insert(currentNode *node, newKey int, newSite *site) *node {
 
 	if float64(newSite.x) < breakpointXCoordinate {
 		currentNode.left = currentNode.insert(currentNode.left, newKey, newSite)
+		currentNode.left.parent = currentNode
 	} else if float64(newSite.x) > breakpointXCoordinate {
 		currentNode.right = currentNode.insert(currentNode.right, newKey, newSite)
+		currentNode.right.parent = currentNode
 	}
 
 	return currentNode
@@ -123,7 +136,8 @@ func (rbtree *redblacktree) inorderTraversal() {
 func (n *node) inorderTraversal(currentNode *node) {
 	if currentNode != nil {
 		currentNode.inorderTraversal(currentNode.left)
-		fmt.Printf("%d ", currentNode.key)
+		//fmt.Printf("%d ", currentNode.key)
+		fmt.Println(currentNode)
 		currentNode.inorderTraversal(currentNode.right)
 	}
 }
