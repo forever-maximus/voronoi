@@ -14,13 +14,13 @@ const (
 // Internal Nodes - These will have a breakpoint but arcSite will be nil
 // Leaf Nodes - These have an arcSite but no breakpoint
 type node struct {
-	left, right, parent *node
-	colour              bool
-	breakpoint          *breakpoint
-	arcSite             *site
-	key                 int
-	circleEvent         *Item
-	edge                *halfEdge
+	left, right, parent, next, previous *node
+	colour                              bool
+	breakpoint                          *breakpoint
+	arcSite                             *site
+	key                                 int
+	circleEvent                         *Item
+	edge                                *halfEdge
 }
 
 type redblacktree struct {
@@ -48,9 +48,11 @@ func (n *node) insert(currentNode *node, newKey int, newSite *site) *node {
 		rightBreakpoint := breakpoint{leftSite: newSite, rightSite: currentNode.arcSite}
 
 		// The 3 leaf nodes that represent the arcs
-		leftLeafNode := node{arcSite: currentNode.arcSite}
-		middleLeafNode := node{arcSite: newSite}
-		rightLeafNode := node{arcSite: currentNode.arcSite}
+		leftLeafNode := node{arcSite: currentNode.arcSite, previous: currentNode.previous}
+		middleLeafNode := node{arcSite: newSite, previous: &leftLeafNode}
+		rightLeafNode := node{arcSite: currentNode.arcSite, next: currentNode.next, previous: &middleLeafNode}
+		middleLeafNode.next = &rightLeafNode
+		leftLeafNode.next = &middleLeafNode
 
 		leftInternalNode := node{key: newKey, left: &leftLeafNode, right: &middleLeafNode, breakpoint: &leftBreakpoint}
 		rightInternalNode := node{key: newKey, left: &leftInternalNode, right: &rightLeafNode, breakpoint: &rightBreakpoint}
@@ -61,8 +63,7 @@ func (n *node) insert(currentNode *node, newKey int, newSite *site) *node {
 		middleLeafNode.parent = &leftInternalNode
 		leftLeafNode.parent = &leftInternalNode
 
-		// TODO - check for potential circle event (i.e. check for unique triples of sites on beachline (a,b,c))
-		// This means that the new site will be on either end of the triple
+		// TODO - check for circle event (i.e. check for unique triples of sites on beachline (a,b,c))
 
 		return &rightInternalNode
 	}
@@ -127,6 +128,50 @@ func (n *node) minValueNode(currentNode *node) *node {
 		return currentNode.minValueNode(currentNode.left)
 	}
 	return currentNode
+}
+
+// // Return the minimum value leaf node in the subtree
+// func minValueLeafNode(currentNode *node) *node {
+// 	if currentNode.breakpoint != nil {
+// 		if currentNode.left != nil {
+// 			return minValueLeafNode(currentNode.left)
+// 		} else if currentNode.right != nil {
+// 			return minValueLeafNode(currentNode.right)
+// 		}
+// 		// nothing should get here - if it does it is an error - all internal nodes should have at least one child
+// 	}
+// 	return currentNode
+// }
+
+// // Return the maximum value leaf node in the subtree
+// func maxValueLeafNode(currentNode *node) *node {
+// 	if currentNode.breakpoint != nil {
+// 		if currentNode.right != nil {
+// 			return maxValueLeafNode(currentNode.right)
+// 		} else if currentNode.left != nil {
+// 			return maxValueLeafNode(currentNode.left)
+// 		}
+// 		// error - all internal nodes should have at least one child
+// 	}
+// 	return currentNode
+// }
+
+// Check whether a leaf node has a circle event and add to event queue if true
+func checkCircleEvent(leafNode *node) *Item {
+	if leafNode.previous == nil || leafNode.next == nil || leafNode.previous.arcSite == leafNode.next.arcSite {
+		return nil
+	}
+
+	// Need to calculate the center of the circle - this will give us the radius and let us know
+	// whether part of the circle still lies below the sweep line
+	// 1. Calculate perpendicular bisector of lines connecting the sites
+	//    (left site to center site, center to right site)
+	// 2. Find the intersection of these two lines - this is the center of the circle
+	// 3. Calculate the distance from the center to the any site - this is the radius
+	// 4. Determine if the lowest point on the circle (center y coordinate minus radius)
+	//    lies below the sweep line y coordinate.
+
+	return nil
 }
 
 func (rbtree *redblacktree) inorderTraversal() {
