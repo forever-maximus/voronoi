@@ -3,6 +3,7 @@
 package main
 
 import (
+	"container/heap"
 	"fmt"
 )
 
@@ -27,20 +28,21 @@ type redblacktree struct {
 	root *node
 }
 
-func (rbtree *redblacktree) insert(newKey int, newSite *site) {
+func (rbtree *redblacktree) insert(newKey int, newSite *site, eventQueue *PriorityQueue) {
 	if rbtree.root == nil {
-		rbtree.root = &node{colour: black, arcSite: newSite}
+		rbtree.root = &node{key: newKey, colour: black, arcSite: newSite}
 	} else {
-		rbtree.root = rbtree.root.insert(rbtree.root, newKey, newSite)
+		rbtree.root = rbtree.root.insert(rbtree.root, newKey, newSite, eventQueue)
 	}
 }
 
-func (n *node) insert(currentNode *node, newKey int, newSite *site) *node {
+func (n *node) insert(currentNode *node, newKey int, newSite *site, eventQueue *PriorityQueue) *node {
 	// Check if this is a leaf node
 	if currentNode.breakpoint == nil {
 
 		if currentNode.circleEvent != nil {
-			// TODO - remove circle event from event queue as it is a false alarm
+			// Remove circle event from event queue as it is a false alarm
+			heap.Remove(eventQueue, currentNode.circleEvent.index)
 		}
 
 		// Define the breakpoints that will be used in the two new internal nodes
@@ -48,14 +50,14 @@ func (n *node) insert(currentNode *node, newKey int, newSite *site) *node {
 		rightBreakpoint := breakpoint{leftSite: newSite, rightSite: currentNode.arcSite}
 
 		// The 3 leaf nodes that represent the arcs
-		leftLeafNode := node{arcSite: currentNode.arcSite, previous: currentNode.previous}
-		middleLeafNode := node{arcSite: newSite, previous: &leftLeafNode}
-		rightLeafNode := node{arcSite: currentNode.arcSite, next: currentNode.next, previous: &middleLeafNode}
+		leftLeafNode := node{arcSite: currentNode.arcSite, previous: currentNode.previous, key: currentNode.key}
+		middleLeafNode := node{arcSite: newSite, previous: &leftLeafNode, key: newKey}
+		rightLeafNode := node{arcSite: currentNode.arcSite, next: currentNode.next, previous: &middleLeafNode, key: currentNode.key}
 		middleLeafNode.next = &rightLeafNode
 		leftLeafNode.next = &middleLeafNode
 
-		leftInternalNode := node{key: newKey, left: &leftLeafNode, right: &middleLeafNode, breakpoint: &leftBreakpoint}
-		rightInternalNode := node{key: newKey, left: &leftInternalNode, right: &rightLeafNode, breakpoint: &rightBreakpoint}
+		leftInternalNode := node{left: &leftLeafNode, right: &middleLeafNode, breakpoint: &leftBreakpoint}
+		rightInternalNode := node{left: &leftInternalNode, right: &rightLeafNode, breakpoint: &rightBreakpoint}
 
 		// Set parent nodes
 		leftInternalNode.parent = &rightInternalNode
@@ -63,7 +65,9 @@ func (n *node) insert(currentNode *node, newKey int, newSite *site) *node {
 		middleLeafNode.parent = &leftInternalNode
 		leftLeafNode.parent = &leftInternalNode
 
-		// TODO - check for circle event (i.e. check for unique triples of sites on beachline (a,b,c))
+		// Check for circle event (i.e. check for unique triples of sites on beachline (a,b,c))
+		leftLeafNode.circleEvent = checkCircleEvent(&leftLeafNode, newSite.y, eventQueue)
+		rightLeafNode.circleEvent = checkCircleEvent(&rightLeafNode, newSite.y, eventQueue)
 
 		return &rightInternalNode
 	}
@@ -72,10 +76,10 @@ func (n *node) insert(currentNode *node, newKey int, newSite *site) *node {
 	breakpointXCoordinate := getBreakpointXCoordinate(currentNode.breakpoint, newSite.y)
 
 	if float64(newSite.x) < breakpointXCoordinate {
-		currentNode.left = currentNode.insert(currentNode.left, newKey, newSite)
+		currentNode.left = currentNode.insert(currentNode.left, newKey, newSite, eventQueue)
 		currentNode.left.parent = currentNode
 	} else if float64(newSite.x) > breakpointXCoordinate {
-		currentNode.right = currentNode.insert(currentNode.right, newKey, newSite)
+		currentNode.right = currentNode.insert(currentNode.right, newKey, newSite, eventQueue)
 		currentNode.right.parent = currentNode
 	}
 
@@ -155,24 +159,6 @@ func (n *node) minValueNode(currentNode *node) *node {
 // 	}
 // 	return currentNode
 // }
-
-// Check whether a leaf node has a circle event and add to event queue if true
-func checkCircleEvent(leafNode *node) *Item {
-	if leafNode.previous == nil || leafNode.next == nil || leafNode.previous.arcSite == leafNode.next.arcSite {
-		return nil
-	}
-
-	// Need to calculate the center of the circle - this will give us the radius and let us know
-	// whether part of the circle still lies below the sweep line
-	// 1. Calculate perpendicular bisector of lines connecting the sites
-	//    (left site to center site, center to right site)
-	// 2. Find the intersection of these two lines - this is the center of the circle
-	// 3. Calculate the distance from the center to the any site - this is the radius
-	// 4. Determine if the lowest point on the circle (center y coordinate minus radius)
-	//    lies below the sweep line y coordinate.
-
-	return nil
-}
 
 func (rbtree *redblacktree) inorderTraversal() {
 	rbtree.root.inorderTraversal(rbtree.root)
