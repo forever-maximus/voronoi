@@ -5,7 +5,7 @@ import "math"
 // Return the x coordinate of the intersection between two parabolas given their directrix and foci.
 // Since the beachline is x-monotone the breakpoints can be differentiated by which parabola is left
 // of the breakpoint and which is right (i.e. breakpoint (a,b) is not the same as (b,a) breakpoint).
-func getBreakpointXCoordinate(focusPair *breakpoint, directrix int) float64 {
+func getBreakpointXCoordinate(focusPair *breakpoint, directrix float64) float64 {
 	// Get the coefficients for each parabola
 	a1, b1, c1 := getCoefficients(focusPair.leftSite, directrix)
 	a2, b2, c2 := getCoefficients(focusPair.rightSite, directrix)
@@ -35,13 +35,13 @@ func getBreakpointXCoordinate(focusPair *breakpoint, directrix int) float64 {
 
 // Return the coefficients in the parabola standard form equation ax^2 + bx + c = 0
 // Note - I got the equations to determine the coefficients from math stackexchange post
-func getCoefficients(site *site, directrix int) (float64, float64, float64) {
+func getCoefficients(site *site, directrix float64) (float64, float64, float64) {
 	// Double the distance from the focus to the directrix
-	dp := float64(2.0 * (site.y - directrix))
+	dp := 2.0 * (site.y - directrix)
 
 	a := 1.0 / dp
-	b := float64((-2.0 * site.x)) / dp
-	c := float64(directrix) + float64((dp / 4.0)) + (float64((site.x * site.x)) / dp)
+	b := (-2.0 * site.x) / dp
+	c := directrix + (dp / 4.0) + ((site.x * site.x) / dp)
 
 	return a, b, c
 }

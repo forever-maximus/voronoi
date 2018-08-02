@@ -5,7 +5,7 @@ import (
 )
 
 // Check whether a leaf node has a circle event and add to event queue if true
-func checkCircleEvent(leafNode *node, sweepline int, eventQueue *PriorityQueue) *Item {
+func checkCircleEvent(leafNode *node, sweepline float64, eventQueue *PriorityQueue) *Item {
 	if leafNode.previous == nil || leafNode.next == nil {
 		return nil
 	}
@@ -27,20 +27,20 @@ func checkCircleEvent(leafNode *node, sweepline int, eventQueue *PriorityQueue) 
 
 	// Difference between first and second, and second and third - These are the constants for linear equations
 	// x^2
-	leftXSquaredDiff := (float64(leftSite.x) * float64(leftSite.x)) - (float64(middleSite.x) * float64(middleSite.x))
-	rightXSquaredDiff := (float64(middleSite.x) * float64(middleSite.x)) - (float64(rightSite.x) * float64(rightSite.x))
+	leftXSquaredDiff := (leftSite.x * leftSite.x) - (middleSite.x * middleSite.x)
+	rightXSquaredDiff := (middleSite.x * middleSite.x) - (rightSite.x * rightSite.x)
 
 	// y^2
-	leftYSquaredDiff := (float64(leftSite.y) * float64(leftSite.y)) - (float64(middleSite.y) * float64(middleSite.y))
-	rightYSquareDiff := (float64(middleSite.y) * float64(middleSite.y)) - (float64(rightSite.y) * float64(rightSite.y))
+	leftYSquaredDiff := (leftSite.y * leftSite.y) - (middleSite.y * middleSite.y)
+	rightYSquareDiff := (middleSite.y * middleSite.y) - (rightSite.y * rightSite.y)
 
 	// -2x -> (this is the a term constant)
-	leftXLinearDiff := (2.0 * float64(leftSite.x)) - (2.0 * float64(middleSite.x))
-	rightXLinearDiff := (2.0 * float64(middleSite.x)) - (2.0 * float64(rightSite.x))
+	leftXLinearDiff := (2.0 * leftSite.x) - (2.0 * middleSite.x)
+	rightXLinearDiff := (2.0 * middleSite.x) - (2.0 * rightSite.x)
 
 	// -2y -> (this is the b term constant)
-	leftYLinearDiff := (2.0 * float64(leftSite.y)) - (2.0 * float64(middleSite.y))
-	rightYLinearDiff := (2.0 * float64(middleSite.y)) - (2.0 * float64(rightSite.y))
+	leftYLinearDiff := (2.0 * leftSite.y) - (2.0 * middleSite.y)
+	rightYLinearDiff := (2.0 * middleSite.y) - (2.0 * rightSite.y)
 
 	// x^2 + y^2 --> (let this be k)
 	constantsLeft := leftXSquaredDiff + leftYSquaredDiff
@@ -52,7 +52,8 @@ func checkCircleEvent(leafNode *node, sweepline int, eventQueue *PriorityQueue) 
 	//      2x1.k2 - 2x2.k1
 	// b = -------------------   (note: the '.' is multiplication)
 	//      2y1.2x2 - 2y2.2x1
-	b := ((-1.0 * leftXLinearDiff * constantsRight) - (-1.0 * rightXLinearDiff * constantsLeft)) / ((leftYLinearDiff * rightXLinearDiff) - (rightYLinearDiff * leftXLinearDiff))
+	b := ((-1.0 * leftXLinearDiff * constantsRight) - (-1.0 * rightXLinearDiff * constantsLeft)) /
+		((leftYLinearDiff * rightXLinearDiff) - (rightYLinearDiff * leftXLinearDiff))
 
 	// now substitute b back into equation a = (k1 - 2y1.b) / 2x1
 	a := (constantsLeft - (leftYLinearDiff * b)) / leftXLinearDiff
@@ -61,19 +62,19 @@ func checkCircleEvent(leafNode *node, sweepline int, eventQueue *PriorityQueue) 
 	// fmt.Println("(a, b) value is --> (", a, ", ", b, ")")
 
 	// Calculate the radius as distance from center to any of the sites (we choose left site)
-	radius := math.Sqrt(math.Pow((float64(leftSite.x)-a), 2) + math.Pow((float64(leftSite.y)-b), 2))
+	radius := math.Sqrt(math.Pow((leftSite.x-a), 2) + math.Pow((leftSite.y-b), 2))
 
 	// Check that the bottom of circle lies below the sweepline
-	bottomOfCircle := b - radius
-	if bottomOfCircle > float64(sweepline) {
+	bottomOfCircleY := b - radius
+	if bottomOfCircleY > sweepline {
 		return nil
 	}
 
 	// The circle event is valid - create and add to event queue
-	circleCenter := site{x: int(a), y: int(b)} // TODO - this feels like bad design - technically not a site
+	circleCenter := site{x: a, y: b} // TODO - this feels like bad design - technically not a site
 	circleEvent := &Item{
 		value:    Event{eventType: "circle", location: circleCenter, leafNode: leafNode},
-		priority: int(bottomOfCircle),
+		priority: bottomOfCircleY,
 		index:    eventQueue.Len(),
 	}
 	eventQueue.Push(circleEvent)

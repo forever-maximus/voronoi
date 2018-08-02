@@ -6,7 +6,7 @@ import (
 )
 
 type site struct {
-	x, y int
+	x, y float64
 }
 
 type breakpoint struct {

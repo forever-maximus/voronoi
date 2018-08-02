@@ -75,10 +75,13 @@ func (n *node) insert(currentNode *node, newKey int, newSite *site, eventQueue *
 	// The directrix will be at the same y coordinate as the new site being added
 	breakpointXCoordinate := getBreakpointXCoordinate(currentNode.breakpoint, newSite.y)
 
-	if float64(newSite.x) < breakpointXCoordinate {
+	fmt.Println("Breakpoint x-coord --> ", breakpointXCoordinate)
+	fmt.Println("New site being added x-coord --> ", newSite.x)
+
+	if newSite.x < breakpointXCoordinate {
 		currentNode.left = currentNode.insert(currentNode.left, newKey, newSite, eventQueue)
 		currentNode.left.parent = currentNode
-	} else if float64(newSite.x) > breakpointXCoordinate {
+	} else if newSite.x > breakpointXCoordinate {
 		currentNode.right = currentNode.insert(currentNode.right, newKey, newSite, eventQueue)
 		currentNode.right.parent = currentNode
 	}
