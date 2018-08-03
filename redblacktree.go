@@ -21,22 +21,30 @@ type node struct {
 	arcSite                             *site
 	key                                 int
 	circleEvent                         *Item
-	edge                                *halfEdge
+	halfEdge                            *halfEdge
 }
 
 type redblacktree struct {
 	root *node
 }
 
-func (rbtree *redblacktree) insert(newKey int, newSite *site, eventQueue *PriorityQueue) {
+func (rbtree *redblacktree) insert(newKey int, newSite *site, eventQueue *PriorityQueue, dcel *doublyConnectedEdgeList) {
 	if rbtree.root == nil {
 		rbtree.root = &node{key: newKey, colour: black, arcSite: newSite}
 	} else {
-		rbtree.root = rbtree.root.insert(rbtree.root, newKey, newSite, eventQueue)
+		rbtree.root = rbtree.root.insert(rbtree.root, newKey, newSite, eventQueue, dcel)
 	}
 }
 
-func (n *node) insert(currentNode *node, newKey int, newSite *site, eventQueue *PriorityQueue) *node {
+// Insert finds the arc on the beachline above the new site (this is the leaf node found) and replaces it with a subtree
+// consisting of 2 internal nodes (breakpoints between arcs) and 3 leaf nodes (arcs on beachline).
+//                                                x
+// (leaf node found)                            /   \       | x = internal node (breakpoint)
+//         o  ---------------------->          x     o      | o = leaf node (arc)
+//                   (transform)             /  \
+//                                          o    o
+func (n *node) insert(currentNode *node, newKey int, newSite *site, eventQueue *PriorityQueue,
+	dcel *doublyConnectedEdgeList) *node {
 	// Check if this is a leaf node
 	if currentNode.breakpoint == nil {
 
@@ -46,19 +54,51 @@ func (n *node) insert(currentNode *node, newKey int, newSite *site, eventQueue *
 		}
 
 		// Define the breakpoints that will be used in the two new internal nodes
-		leftBreakpoint := breakpoint{leftSite: currentNode.arcSite, rightSite: newSite}
-		rightBreakpoint := breakpoint{leftSite: newSite, rightSite: currentNode.arcSite}
+		leftBreakpoint := breakpoint{
+			leftSite:  currentNode.arcSite,
+			rightSite: newSite,
+		}
+		rightBreakpoint := breakpoint{
+			leftSite:  newSite,
+			rightSite: currentNode.arcSite,
+		}
 
 		// The 3 leaf nodes that represent the arcs
-		leftLeafNode := node{arcSite: currentNode.arcSite, previous: currentNode.previous, key: currentNode.key}
-		middleLeafNode := node{arcSite: newSite, previous: &leftLeafNode, key: newKey}
-		rightLeafNode := node{arcSite: currentNode.arcSite, next: currentNode.next, previous: &middleLeafNode,
-			key: currentNode.key}
+		leftLeafNode := node{
+			arcSite:  currentNode.arcSite,
+			previous: currentNode.previous,
+			key:      currentNode.key,
+		}
+		middleLeafNode := node{arcSite: newSite,
+			previous: &leftLeafNode,
+			key:      newKey,
+		}
+		rightLeafNode := node{
+			arcSite:  currentNode.arcSite,
+			next:     currentNode.next,
+			previous: &middleLeafNode,
+			key:      currentNode.key,
+		}
 		middleLeafNode.next = &rightLeafNode
 		leftLeafNode.next = &middleLeafNode
 
-		leftInternalNode := node{left: &leftLeafNode, right: &middleLeafNode, breakpoint: &leftBreakpoint}
-		rightInternalNode := node{left: &leftInternalNode, right: &rightLeafNode, breakpoint: &rightBreakpoint}
+		// Create and add half-edges to dcel structure
+		leftHalfEdge := dcel.addIsolatedEdge()
+		rightHalfEdge := dcel.addIsolatedEdge()
+
+		// The 2 internal nodes which represent each edge being traced out
+		leftInternalNode := node{
+			left:       &leftLeafNode,
+			right:      &middleLeafNode,
+			breakpoint: &leftBreakpoint,
+			halfEdge:   leftHalfEdge,
+		}
+		rightInternalNode := node{
+			left:       &leftInternalNode,
+			right:      &rightLeafNode,
+			breakpoint: &rightBreakpoint,
+			halfEdge:   rightHalfEdge,
+		}
 
 		// Set parent nodes
 		leftInternalNode.parent = &rightInternalNode
@@ -76,14 +116,11 @@ func (n *node) insert(currentNode *node, newKey int, newSite *site, eventQueue *
 	// The directrix will be at the same y coordinate as the new site being added
 	breakpointXCoordinate := getBreakpointXCoordinate(currentNode.breakpoint, newSite.y)
 
-	fmt.Println("Breakpoint x-coord --> ", breakpointXCoordinate)
-	fmt.Println("New site being added x-coord --> ", newSite.x)
-
 	if newSite.x < breakpointXCoordinate {
-		currentNode.left = currentNode.insert(currentNode.left, newKey, newSite, eventQueue)
+		currentNode.left = currentNode.insert(currentNode.left, newKey, newSite, eventQueue, dcel)
 		currentNode.left.parent = currentNode
 	} else if newSite.x > breakpointXCoordinate {
-		currentNode.right = currentNode.insert(currentNode.right, newKey, newSite, eventQueue)
+		currentNode.right = currentNode.insert(currentNode.right, newKey, newSite, eventQueue, dcel)
 		currentNode.right.parent = currentNode
 	}
 

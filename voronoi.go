@@ -45,12 +45,13 @@ func main() {
 
 func fortunesAlgorithm(eventQueue *PriorityQueue) {
 	beachline := redblacktree{root: nil}
+	dcel := doublyConnectedEdgeList{vertices: nil, edges: nil}
 	counter := 1
 	for eventQueue.Len() > 0 {
 		item := heap.Pop(eventQueue).(*Item)
 		if item.value.eventType == "site" {
 			// Site event
-			beachline.insert(counter, &item.value.location, eventQueue)
+			beachline.insert(counter, &item.value.location, eventQueue, &dcel)
 			counter++
 		} else {
 			// Circle event
