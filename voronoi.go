@@ -2,7 +2,6 @@ package main
 
 import (
 	"container/heap"
-	"fmt"
 )
 
 type site struct {
@@ -55,7 +54,7 @@ func fortunesAlgorithm(eventQueue *PriorityQueue) {
 			counter++
 		} else {
 			// Circle event
-			fmt.Println("Circle event detected!")
+			beachline.removeArc(item.value.leafNode, eventQueue, &item.value.location, &dcel, item.priority)
 		}
 	}
 	beachline.inorderTraversal()

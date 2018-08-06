@@ -65,8 +65,11 @@ func checkCircleEvent(leafNode *node, sweepline float64, eventQueue *PriorityQue
 	radius := math.Sqrt(math.Pow((leftSite.x-a), 2) + math.Pow((leftSite.y-b), 2))
 
 	// Check that the bottom of circle lies below the sweepline
+	// TODO - The 0.01 is to deal with the situation where a circle event check for other circle events after
+	//       it has been handled and finds the exact one that it is currently at
+	//      - There must be a better way to handle this
 	bottomOfCircleY := b - radius
-	if bottomOfCircleY > sweepline {
+	if bottomOfCircleY+0.0000001 > sweepline {
 		return nil
 	}
 

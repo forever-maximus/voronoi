@@ -15,8 +15,10 @@ type doublyConnectedEdgeList struct {
 	edges    []halfEdge
 }
 
-func (dcel *doublyConnectedEdgeList) addIsolatedVertex(x, y float64) {
-	dcel.vertices = append(dcel.vertices, vertex{x: x, y: y})
+func (dcel *doublyConnectedEdgeList) addIsolatedVertex(x, y float64) *vertex {
+	newVertex := vertex{x: x, y: y}
+	dcel.vertices = append(dcel.vertices, newVertex)
+	return &newVertex
 }
 
 func (dcel *doublyConnectedEdgeList) addIsolatedEdge() *halfEdge {

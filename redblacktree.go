@@ -84,7 +84,7 @@ func (n *node) insert(currentNode *node, newKey int, newSite *site, eventQueue *
 
 		// Create and add half-edges to dcel structure
 		leftHalfEdge := dcel.addIsolatedEdge()
-		rightHalfEdge := dcel.addIsolatedEdge()
+		rightHalfEdge := leftHalfEdge.twinEdge
 
 		// The 2 internal nodes which represent each edge being traced out
 		leftInternalNode := node{
@@ -127,7 +127,8 @@ func (n *node) insert(currentNode *node, newKey int, newSite *site, eventQueue *
 	return currentNode
 }
 
-func (rbtree *redblacktree) removeArc(leafNode *node, eventQueue *PriorityQueue) {
+func (rbtree *redblacktree) removeArc(leafNode *node, eventQueue *PriorityQueue, circleCenter *site,
+	dcel *doublyConnectedEdgeList, sweepline float64) {
 	if leafNode.parent == nil {
 		// This happens if only 1 node is in the tree and you call remove - this should never happen
 		rbtree.root = nil
@@ -143,6 +144,84 @@ func (rbtree *redblacktree) removeArc(leafNode *node, eventQueue *PriorityQueue)
 	if rightLeafNode.circleEvent != nil {
 		heap.Remove(eventQueue, rightLeafNode.circleEvent.index)
 	}
+
+	// Get the ancestors of the leafnode required
+	leafNodeSibling := getSibling(leafNode)
+	parentNode := leafNode.parent
+	grandparent := parentNode.parent
+	greatGrandParent := grandparent.parent
+
+	// Check whether leafnode is on right or left side of the grandparent - then replace leaf+parent with leafSibling
+	if grandparent.left == parentNode {
+		grandparent.left = leafNodeSibling
+	} else {
+		grandparent.right = leafNodeSibling
+	}
+
+	// Work out the replacement site that will go in the great grandparent node breakpoint
+	arcSiteReplacement := &site{}
+	if parentNode.breakpoint.leftSite != leafNode.arcSite {
+		arcSiteReplacement = parentNode.breakpoint.leftSite
+	} else {
+		arcSiteReplacement = parentNode.breakpoint.rightSite
+	}
+
+	// Replace the removed arc from the breakpoint in the great grandparent
+	isLeafParentLeft := true
+	if greatGrandParent.breakpoint.leftSite == leafNode.arcSite {
+		greatGrandParent.breakpoint.leftSite = arcSiteReplacement
+	} else {
+		greatGrandParent.breakpoint.rightSite = arcSiteReplacement
+		isLeafParentLeft = false
+	}
+
+	// Assign which halfedge is inbound from left and which is from right
+	leftHalfEdge, rightHalfEdge := &halfEdge{}, &halfEdge{}
+	if isLeafParentLeft == true {
+		leftHalfEdge = parentNode.halfEdge
+		rightHalfEdge = greatGrandParent.halfEdge
+	} else {
+		leftHalfEdge = greatGrandParent.halfEdge
+		rightHalfEdge = parentNode.halfEdge
+	}
+
+	// Create new halfedge pair
+	newHalfEdge := dcel.addIsolatedEdge()
+
+	// Add circle center as a new vertex of the voronoi diagram
+	voronoiVertex := dcel.addIsolatedVertex(circleCenter.x, circleCenter.y)
+
+	// Connect halfedges to the vertex
+	leftHalfEdge.originVertex = voronoiVertex
+	rightHalfEdge.originVertex = voronoiVertex
+	newHalfEdge.originVertex = voronoiVertex
+
+	// Connect halfedges with each other
+	leftHalfEdge.twinEdge.nextEdge = newHalfEdge
+	newHalfEdge.twinEdge.nextEdge = rightHalfEdge
+	rightHalfEdge.twinEdge.nextEdge = leftHalfEdge
+
+	// Fix the next and previous nodes of the nodes left and right of the node which was just removed
+	leftLeafNode.next = rightLeafNode
+	rightLeafNode.previous = leftLeafNode
+
+	// Update the halfedge record in the great grandparent since the breakpoint has changed
+	greatGrandParent.halfEdge = newHalfEdge.twinEdge
+
+	// Check for new circle events now that the leaf has been removed from the beachline
+	leftLeafNode.circleEvent = checkCircleEvent(leftLeafNode, sweepline, eventQueue)
+	rightLeafNode.circleEvent = checkCircleEvent(rightLeafNode, sweepline, eventQueue)
+}
+
+// Assumption - due to the nature of the algorithm a node will always have a sibling unless root node
+func getSibling(node *node) *node {
+	if node.parent == nil {
+		return nil // this will happen if the input node is the root node
+	}
+	if node.parent.right == node {
+		return node.parent.left
+	}
+	return node.parent.left
 }
 
 func (rbtree *redblacktree) inorderTraversal() {
