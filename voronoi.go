@@ -13,6 +13,10 @@ type breakpoint struct {
 	rightSite *site
 }
 
+type boundingBox struct {
+	height, width float64
+}
+
 // Event - represents an event used in Fortune's algorithm for generating voronoi diagram
 type Event struct {
 	eventType string
@@ -57,5 +61,14 @@ func fortunesAlgorithm(eventQueue *PriorityQueue) {
 			beachline.removeArc(item.value.leafNode, eventQueue, &item.value.location, &dcel, item.priority)
 		}
 	}
-	beachline.inorderTraversal()
+
+	//beachline.inorderTraversal()
+
+	// Add bounding box and connect half infinite edges to it
+	boundingBox := boundingBox{height: 500, width: 500}
+	connectEdgesToBoundary(beachline.root, boundingBox, &dcel)
+
+	for _, halfEdge := range dcel.edges {
+		println("Vertex (x, y) --> (", int(halfEdge.originVertex.x), ", ", int(halfEdge.originVertex.y), ")")
+	}
 }
