@@ -2,6 +2,8 @@ package main
 
 import (
 	"container/heap"
+
+	"github.com/fogleman/gg"
 )
 
 type site struct {
@@ -43,10 +45,10 @@ func main() {
 	}
 	heap.Init(&pq)
 
-	fortunesAlgorithm(&pq)
+	fortunesAlgorithm(&pq, siteList)
 }
 
-func fortunesAlgorithm(eventQueue *PriorityQueue) {
+func fortunesAlgorithm(eventQueue *PriorityQueue, siteList []site) {
 	beachline := redblacktree{root: nil}
 	dcel := doublyConnectedEdgeList{vertices: nil, edges: nil}
 	counter := 1
@@ -68,7 +70,33 @@ func fortunesAlgorithm(eventQueue *PriorityQueue) {
 	boundingBox := boundingBox{height: 500, width: 500}
 	connectEdgesToBoundary(beachline.root, boundingBox, &dcel)
 
+	// Draw voronoi
+	drawVoronoi(boundingBox, &dcel, siteList)
+}
+
+func drawVoronoi(boundingBox boundingBox, dcel *doublyConnectedEdgeList, siteList []site) {
+	// The drawing module sets the top left as (0, 0) and bottom right as (boundary.width, boundary.height).
+	// i.e. flipped the y axis direction from what was expected - ignore for now
+	voronoi := gg.NewContext(int(boundingBox.width), int(boundingBox.height))
+	voronoi.SetRGB(1, 1, 1)
+	voronoi.Clear()
+	voronoi.SetLineWidth(4)
+
 	for _, halfEdge := range dcel.edges {
-		println("Vertex (x, y) --> (", int(halfEdge.originVertex.x), ", ", int(halfEdge.originVertex.y), ")")
+		// println("Vertex (x, y) --> (", int(halfEdge.originVertex.x), ", ", int(halfEdge.originVertex.y), ")")
+		// println("Twin Vertex (x, y) --> (", int(halfEdge.twinEdge.originVertex.x), ", ",
+		// 	int(halfEdge.twinEdge.originVertex.y), ")")
+
+		voronoi.SetRGB(0.3, 0.7, 0.8)
+		voronoi.DrawLine(halfEdge.originVertex.x, halfEdge.originVertex.y,
+			halfEdge.twinEdge.originVertex.x, halfEdge.twinEdge.originVertex.y)
+		voronoi.Stroke()
 	}
+
+	for _, site := range siteList {
+		voronoi.SetRGB(0.9, 0.5, 0.6)
+		voronoi.DrawPoint(site.x, site.y, 2.0)
+		voronoi.Stroke()
+	}
+	voronoi.SavePNG("testingVoronoi.png")
 }
