@@ -71,10 +71,10 @@ func fortunesAlgorithm(eventQueue *PriorityQueue, siteList []site) {
 	// 	}
 	// }
 
-	// println()
-	// for _, vertex := range dcel.vertices {
-	// 	println("Vertex (x, y) --> (", int(vertex.x), ", ", int(vertex.y), ")")
-	// }
+	println()
+	for _, vertex := range dcel.vertices {
+		println("Vertex (x, y) --> (", int(vertex.x), ", ", int(vertex.y), ")")
+	}
 
 	//beachline.inorderTraversal()
 

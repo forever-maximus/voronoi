@@ -19,6 +19,22 @@ func checkCircleEvent(leafNode *node, sweepline float64, eventQueue *PriorityQue
 		return nil
 	}
 
+	// WTF - I have no idea how this part works
+	// THIS IS NOT EXPLAINED IN THE TEXT BOOK AT ALL
+	// Taken from https://github.com/gorhill/Javascript-Voronoi/blob/master/rhill-voronoi-core.js
+	// TODO - work out how this works
+	// Apparently circle's have an orientation and clockwise ones are not valid circle events (?)
+	bx := middleSite.x
+	by := middleSite.y
+	ax := leftSite.x - bx
+	ay := leftSite.y - by
+	cx := rightSite.x - bx
+	cy := rightSite.y - by
+	d := 2 * ((ax * cy) - (ay * cx))
+	if d < 0 {
+		return nil
+	}
+
 	// Let the center be (a, b) -> each point is equal distance to (a, b) since all lie on the circumference.
 	// Given points (x1, y1), (x2, y2), (x3, y3) equate square of distance:
 	// (a - x1)^2 + (b - y1)^2 = (a - x2)^2 + (b - y2)^2 = (a - x3)^2 + (b - y3)^2
