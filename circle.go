@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/heap"
 	"math"
 )
 
@@ -78,9 +79,8 @@ func checkCircleEvent(leafNode *node, sweepline float64, eventQueue *PriorityQue
 	circleEvent := &Item{
 		value:    Event{eventType: "circle", location: circleCenter, leafNode: leafNode},
 		priority: bottomOfCircleY,
-		index:    eventQueue.Len(),
 	}
-	eventQueue.Push(circleEvent)
+	heap.Push(eventQueue, circleEvent)
 
 	return circleEvent
 }

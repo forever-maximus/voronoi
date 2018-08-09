@@ -32,6 +32,7 @@ func main() {
 		site{x: 40, y: 120},
 		site{x: 70, y: 150},
 		site{x: 120, y: 70},
+		site{x: 260, y: 170},
 	}
 
 	// Create a priority queue, put the items in it
@@ -64,6 +65,17 @@ func fortunesAlgorithm(eventQueue *PriorityQueue, siteList []site) {
 		}
 	}
 
+	// for _, halfEdge := range dcel.edges {
+	// 	if halfEdge.originVertex != nil {
+	// 		println("Half edge - Vertex (x, y) --> (", int(halfEdge.originVertex.x), ", ", int(halfEdge.originVertex.y), ")")
+	// 	}
+	// }
+
+	// println()
+	// for _, vertex := range dcel.vertices {
+	// 	println("Vertex (x, y) --> (", int(vertex.x), ", ", int(vertex.y), ")")
+	// }
+
 	//beachline.inorderTraversal()
 
 	// Add bounding box and connect half infinite edges to it
@@ -88,14 +100,14 @@ func drawVoronoi(boundingBox boundingBox, dcel *doublyConnectedEdgeList, siteLis
 		// 	int(halfEdge.twinEdge.originVertex.y), ")")
 
 		voronoi.SetRGB(0.3, 0.7, 0.8)
-		voronoi.DrawLine(halfEdge.originVertex.x, halfEdge.originVertex.y,
-			halfEdge.twinEdge.originVertex.x, halfEdge.twinEdge.originVertex.y)
+		voronoi.DrawLine(halfEdge.originVertex.x, boundingBox.height-halfEdge.originVertex.y,
+			halfEdge.twinEdge.originVertex.x, boundingBox.height-halfEdge.twinEdge.originVertex.y)
 		voronoi.Stroke()
 	}
 
 	for _, site := range siteList {
 		voronoi.SetRGB(0.9, 0.5, 0.6)
-		voronoi.DrawPoint(site.x, site.y, 2.0)
+		voronoi.DrawPoint(site.x, boundingBox.height-site.y, 2.0)
 		voronoi.Stroke()
 	}
 	voronoi.SavePNG("testingVoronoi.png")
