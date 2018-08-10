@@ -32,7 +32,7 @@ func main() {
 		site{x: 40, y: 120},
 		site{x: 70, y: 150},
 		site{x: 120, y: 70},
-		site{x: 260, y: 170},
+		//site{x: 260, y: 170},
 	}
 
 	// Create a priority queue, put the items in it

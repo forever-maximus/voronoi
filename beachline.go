@@ -146,16 +146,42 @@ func (rbtree *redblacktree) removeArc(leafNode *node, eventQueue *PriorityQueue,
 	}
 
 	// Get the ancestors of the leafnode required
-	leafNodeSibling := getSibling(leafNode)
+	siblingNode := getSibling(leafNode)
 	parentNode := leafNode.parent
 	grandparent := parentNode.parent
 	greatGrandParent := grandparent.parent
 
-	// Check whether leafnode is on right or left side of the grandparent - then replace leaf+parent with leafSibling
+	// Check whether leafnode is in right or left subtree of the grandparent - then replace leaf+parent with sibling
 	if grandparent.left == parentNode {
-		grandparent.left = leafNodeSibling
+		grandparent.left = siblingNode
 	} else {
-		grandparent.right = leafNodeSibling
+		grandparent.right = siblingNode
+	}
+
+	// Check if leaf node is left or right child
+	alteredInternalNode := &node{}
+	if parentNode.left == leafNode {
+		// Leaf node is a left child
+		// 1. Get inorder predecessor of the leaf node (this will always be an internal node)
+		alteredInternalNode = inorderPredecessorOfLeafNode(leafNode)
+
+		// 2. Get minimum leaf node in sibling subtree (if sibling is a leaf it will be sibling node)
+		minimumInSiblingTree := getMinimumLeafNode(siblingNode)
+
+		// 3. Replace the right site in the inorder predecessor's breakpoint (returned in step 1) with
+		//    the minimum leaf in sibling subtree (step 2)
+		alteredInternalNode.right = minimumInSiblingTree
+	} else {
+		// Leaf node is right child
+		// 1. Get inorder successor of the leaf node (this will always be an internal node)
+		alteredInternalNode = inorderSuccessorOfLeafNode(leafNode)
+
+		// 2. Get maximum leaf node in sibling subtree (if sibling is a leaf it will be sibling node)
+		maximumInSiblingTree := getMaximumLeafNode(siblingNode)
+
+		// 3. Replace the left site in the inorder successor's breakpoint (returned in step 1) with
+		//    the maximum leaf in sibling subtree (step 2)
+		alteredInternalNode.left = maximumInSiblingTree
 	}
 
 	// Work out the replacement site that will go in the great grandparent node breakpoint
@@ -222,6 +248,52 @@ func getSibling(node *node) *node {
 		return node.parent.left
 	}
 	return node.parent.right
+}
+
+// Return the inorder successor of a leaf node
+func inorderSuccessorOfLeafNode(currentNode *node) *node {
+	for currentNode.parent != nil {
+		if currentNode.parent.left == currentNode {
+			return currentNode.parent
+		}
+		currentNode = currentNode.parent
+	}
+	// The input leaf node was either on end of beachline (right-most leaf) or root node (tree size = 1)
+	return nil
+}
+
+// Return the inorder predecessor of a leaf node
+func inorderPredecessorOfLeafNode(currentNode *node) *node {
+	for currentNode.parent != nil {
+		if currentNode.parent.right == currentNode {
+			return currentNode.parent
+		}
+		currentNode = currentNode.parent
+	}
+	// The input leaf node was either on start of beachline (left-most leaf) or root node (tree size = 1)
+	return nil
+}
+
+// Return the minimum leaf node in a subtree
+func getMinimumLeafNode(currentNode *node) *node {
+	if currentNode.breakpoint != nil {
+		if currentNode.left != nil {
+			return getMinimumLeafNode(currentNode.left)
+		}
+		return getMinimumLeafNode(currentNode.right)
+	}
+	return currentNode
+}
+
+// Return the maximum leaf node in a subtree
+func getMaximumLeafNode(currentNode *node) *node {
+	if currentNode.breakpoint != nil {
+		if currentNode.right != nil {
+			return getMaximumLeafNode(currentNode.right)
+		}
+		return getMaximumLeafNode(currentNode.left)
+	}
+	return currentNode
 }
 
 func (rbtree *redblacktree) inorderTraversal() {
