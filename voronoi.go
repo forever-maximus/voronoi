@@ -32,7 +32,8 @@ func main() {
 		site{x: 40, y: 120},
 		site{x: 70, y: 150},
 		site{x: 120, y: 70},
-		//site{x: 260, y: 170},
+		site{x: 260, y: 170},
+		//site{x: 400, y: 450},
 	}
 
 	// Create a priority queue, put the items in it
@@ -58,22 +59,12 @@ func fortunesAlgorithm(eventQueue *PriorityQueue, siteList []site) {
 		if item.value.eventType == "site" {
 			// Site event
 			beachline.insert(counter, &item.value.location, eventQueue, &dcel)
-			counter++
 		} else {
 			// Circle event
-			beachline.removeArc(item.value.leafNode, eventQueue, &item.value.location, &dcel, item.priority)
+			beachline.removeArc(item.value.leafNode, eventQueue, &item.value.location, &dcel,
+				item.priority, counter)
 		}
-	}
-
-	// for _, halfEdge := range dcel.edges {
-	// 	if halfEdge.originVertex != nil {
-	// 		println("Half edge - Vertex (x, y) --> (", int(halfEdge.originVertex.x), ", ", int(halfEdge.originVertex.y), ")")
-	// 	}
-	// }
-
-	println()
-	for _, vertex := range dcel.vertices {
-		println("Vertex (x, y) --> (", int(vertex.x), ", ", int(vertex.y), ")")
+		counter++
 	}
 
 	//beachline.inorderTraversal()
@@ -95,10 +86,6 @@ func drawVoronoi(boundingBox boundingBox, dcel *doublyConnectedEdgeList, siteLis
 	voronoi.SetLineWidth(4)
 
 	for _, halfEdge := range dcel.edges {
-		// println("Vertex (x, y) --> (", int(halfEdge.originVertex.x), ", ", int(halfEdge.originVertex.y), ")")
-		// println("Twin Vertex (x, y) --> (", int(halfEdge.twinEdge.originVertex.x), ", ",
-		// 	int(halfEdge.twinEdge.originVertex.y), ")")
-
 		voronoi.SetRGB(0.3, 0.7, 0.8)
 		voronoi.DrawLine(halfEdge.originVertex.x, boundingBox.height-halfEdge.originVertex.y,
 			halfEdge.twinEdge.originVertex.x, boundingBox.height-halfEdge.twinEdge.originVertex.y)

@@ -92,12 +92,14 @@ func (n *node) insert(currentNode *node, newKey int, newSite *site, eventQueue *
 			right:      &middleLeafNode,
 			breakpoint: &leftBreakpoint,
 			halfEdge:   leftHalfEdge,
+			key:        newKey,
 		}
 		rightInternalNode := node{
 			left:       &leftInternalNode,
 			right:      &rightLeafNode,
 			breakpoint: &rightBreakpoint,
 			halfEdge:   rightHalfEdge,
+			key:        newKey,
 		}
 
 		// Set parent nodes
@@ -128,7 +130,7 @@ func (n *node) insert(currentNode *node, newKey int, newSite *site, eventQueue *
 }
 
 func (rbtree *redblacktree) removeArc(leafNode *node, eventQueue *PriorityQueue, circleCenter *site,
-	dcel *doublyConnectedEdgeList, sweepline float64) {
+	dcel *doublyConnectedEdgeList, sweepline float64, newKey int) {
 	if leafNode.parent == nil {
 		// This happens if only 1 node is in the tree and you call remove - this should never happen
 		rbtree.root = nil
@@ -149,18 +151,11 @@ func (rbtree *redblacktree) removeArc(leafNode *node, eventQueue *PriorityQueue,
 	siblingNode := getSibling(leafNode)
 	parentNode := leafNode.parent
 	grandparent := parentNode.parent
-	greatGrandParent := grandparent.parent
 
-	// Check whether leafnode is in right or left subtree of the grandparent - then replace leaf+parent with sibling
-	if grandparent.left == parentNode {
-		grandparent.left = siblingNode
-	} else {
-		grandparent.right = siblingNode
-	}
-
-	// Check if leaf node is left or right child
+	// Check if leaf node is left or right child and modify the internal node accordingly
 	alteredInternalNode := &node{}
-	if parentNode.left == leafNode {
+	isLeafLeftChild := parentNode.left == leafNode
+	if isLeafLeftChild == true {
 		// Leaf node is a left child
 		// 1. Get inorder predecessor of the leaf node (this will always be an internal node)
 		alteredInternalNode = inorderPredecessorOfLeafNode(leafNode)
@@ -169,8 +164,8 @@ func (rbtree *redblacktree) removeArc(leafNode *node, eventQueue *PriorityQueue,
 		minimumInSiblingTree := getMinimumLeafNode(siblingNode)
 
 		// 3. Replace the right site in the inorder predecessor's breakpoint (returned in step 1) with
-		//    the minimum leaf in sibling subtree (step 2)
-		alteredInternalNode.right = minimumInSiblingTree
+		//    the arc site from minimum leaf in sibling subtree (step 2)
+		alteredInternalNode.breakpoint.rightSite = minimumInSiblingTree.arcSite
 	} else {
 		// Leaf node is right child
 		// 1. Get inorder successor of the leaf node (this will always be an internal node)
@@ -180,35 +175,26 @@ func (rbtree *redblacktree) removeArc(leafNode *node, eventQueue *PriorityQueue,
 		maximumInSiblingTree := getMaximumLeafNode(siblingNode)
 
 		// 3. Replace the left site in the inorder successor's breakpoint (returned in step 1) with
-		//    the maximum leaf in sibling subtree (step 2)
-		alteredInternalNode.left = maximumInSiblingTree
+		//    the arc site from maximum leaf in sibling subtree (step 2)
+		alteredInternalNode.breakpoint.leftSite = maximumInSiblingTree.arcSite
 	}
 
-	// Work out the replacement site that will go in the great grandparent node breakpoint
-	arcSiteReplacement := &site{}
-	if parentNode.breakpoint.leftSite != leafNode.arcSite {
-		arcSiteReplacement = parentNode.breakpoint.leftSite
+	// Check whether leafnode is in right or left subtree of the grandparent - then replace leaf+parent with sibling
+	if grandparent.left == parentNode {
+		grandparent.left = siblingNode
 	} else {
-		arcSiteReplacement = parentNode.breakpoint.rightSite
+		grandparent.right = siblingNode
 	}
-
-	// Replace the removed arc from the breakpoint in the great grandparent
-	isLeafParentLeft := true
-	if greatGrandParent.breakpoint.leftSite == leafNode.arcSite {
-		greatGrandParent.breakpoint.leftSite = arcSiteReplacement
-	} else {
-		greatGrandParent.breakpoint.rightSite = arcSiteReplacement
-		isLeafParentLeft = false
-	}
+	siblingNode.parent = grandparent
 
 	// Assign which halfedge is inbound from left and which is from right
 	leftHalfEdge, rightHalfEdge := &halfEdge{}, &halfEdge{}
-	if isLeafParentLeft == true {
-		leftHalfEdge = parentNode.halfEdge
-		rightHalfEdge = greatGrandParent.halfEdge
-	} else {
-		leftHalfEdge = greatGrandParent.halfEdge
+	if isLeafLeftChild == true {
+		leftHalfEdge = alteredInternalNode.halfEdge
 		rightHalfEdge = parentNode.halfEdge
+	} else {
+		leftHalfEdge = parentNode.halfEdge
+		rightHalfEdge = alteredInternalNode.halfEdge
 	}
 
 	// Create new halfedge pair
@@ -232,7 +218,7 @@ func (rbtree *redblacktree) removeArc(leafNode *node, eventQueue *PriorityQueue,
 	rightLeafNode.previous = leftLeafNode
 
 	// Update the halfedge record in the great grandparent since the breakpoint has changed
-	greatGrandParent.halfEdge = newHalfEdge.twinEdge
+	alteredInternalNode.halfEdge = newHalfEdge.twinEdge
 
 	// Check for new circle events now that the leaf has been removed from the beachline
 	leftLeafNode.circleEvent = checkCircleEvent(leftLeafNode, sweepline, eventQueue)
