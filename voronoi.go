@@ -28,12 +28,23 @@ type Event struct {
 
 func main() {
 	// Some input sites
+	// siteList := []site{
+	// 	site{x: 40, y: 120},
+	// 	site{x: 70, y: 150},
+	// 	site{x: 120, y: 70},
+	// 	site{x: 260, y: 170},
+	// }
+
 	siteList := []site{
 		site{x: 40, y: 120},
 		site{x: 70, y: 150},
 		site{x: 120, y: 70},
 		site{x: 260, y: 170},
-		//site{x: 400, y: 450},
+		site{x: 176, y: 220},
+		site{x: 246, y: 110},
+		site{x: 430, y: 450},
+		site{x: 200, y: 400},
+		site{x: 400, y: 100},
 	}
 
 	// Create a priority queue, put the items in it
@@ -83,7 +94,7 @@ func drawVoronoi(boundingBox boundingBox, dcel *doublyConnectedEdgeList, siteLis
 	voronoi := gg.NewContext(int(boundingBox.width), int(boundingBox.height))
 	voronoi.SetRGB(1, 1, 1)
 	voronoi.Clear()
-	voronoi.SetLineWidth(4)
+	voronoi.SetLineWidth(3)
 
 	for _, halfEdge := range dcel.edges {
 		voronoi.SetRGB(0.3, 0.7, 0.8)
