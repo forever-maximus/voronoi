@@ -108,6 +108,14 @@ func (n *node) insert(currentNode *node, newKey int, newSite *site, eventQueue *
 		middleLeafNode.parent = &leftInternalNode
 		leftLeafNode.parent = &leftInternalNode
 
+		// Fix prev/next pointers of the old leaf nodes prev/next leaves
+		if currentNode.next != nil {
+			currentNode.next.previous = &rightLeafNode
+		}
+		if currentNode.previous != nil {
+			currentNode.previous.next = &leftLeafNode
+		}
+
 		// Check for circle event (i.e. check for unique triples of sites on beachline (a,b,c))
 		leftLeafNode.circleEvent = checkCircleEvent(&leftLeafNode, newSite.y, eventQueue)
 		rightLeafNode.circleEvent = checkCircleEvent(&rightLeafNode, newSite.y, eventQueue)

@@ -35,17 +35,26 @@ func main() {
 	// 	site{x: 260, y: 170},
 	// }
 
+	// TODO - Investigate why these cause an error
 	siteList := []site{
-		site{x: 40, y: 120},
-		site{x: 70, y: 150},
-		site{x: 120, y: 70},
-		site{x: 260, y: 170},
-		site{x: 176, y: 220},
-		site{x: 246, y: 110},
-		site{x: 430, y: 450},
-		site{x: 200, y: 400},
-		site{x: 400, y: 100},
+		site{x: 188, y: 170},
+		site{x: 245, y: 104},
+		site{x: 198, y: 276},
+		site{x: 412, y: 200}, // Change the y coord here such that y < 170 or y > 276 will remove error
+		// i.e. Not the second site handled
 	}
+
+	// siteList := []site{}
+	// source := rand.New(rand.NewSource(time.Now().UnixNano()))
+	// for i := 0; i < 4; i++ {
+	// 	xCoord := source.Float64() * 500
+	// 	yCoord := source.Float64() * 500
+	// 	siteList = append(siteList, site{x: xCoord, y: yCoord})
+	// }
+
+	// for _, site := range siteList {
+	// 	fmt.Println("Site (x, y) --> (", site.x, ", ", site.y, ")")
+	// }
 
 	// Create a priority queue, put the items in it
 	pq := make(PriorityQueue, len(siteList))
@@ -81,7 +90,7 @@ func fortunesAlgorithm(eventQueue *PriorityQueue, siteList []site) {
 	//beachline.inorderTraversal()
 
 	// Add bounding box and connect half infinite edges to it
-	boundingBox := boundingBox{height: 500, width: 500}
+	boundingBox := boundingBox{height: 700, width: 700}
 	connectEdgesToBoundary(beachline.root, boundingBox, &dcel)
 
 	// Draw voronoi
